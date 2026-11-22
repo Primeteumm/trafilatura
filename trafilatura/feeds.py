@@ -52,7 +52,7 @@ FEED_TYPES = {
 FEED_OPENING = re.compile(r"<(feed|rss|\?xml)")
 CHAR_REF = re.compile(r"&#?\w+;")
 RSS_ROOT = re.compile(r"<(?:rss|(?:\w+:)?RDF)\b")
-FEED_ITEM = re.compile(r"<(?:[\w.-]+:)?(?:item|entry)\b")
+FEED_ITEM = re.compile(r"<!--.*?-->|<!\[CDATA\[.*?\]\]>|<(?:[\w.-]+:)?(?:item|entry)\b", re.DOTALL)
 
 LINK_ATTRS = re.compile(r"""<link\s+(?:[^>"']|"[^"]*"|'[^']*')*["']?/?>""")
 LINK_ATTRIBUTES = re.compile(r"""\s([\w:-]+)\s*=\s*(["'])(.*?)\2""", re.DOTALL)
@@ -161,9 +161,8 @@ def find_links(feed_string: str, params: FeedParameters) -> list[str]:
             LOGGER.debug("Possibly invalid feed: %s", params.domain)
         return []
 
-    # skip the links of the feed itself
-    first_item = FEED_ITEM.search(feed_string)
-    start = first_item.start() if first_item else 0
+    # skip the links of the feed itself, comments and CDATA sections are not items
+    start = next((m.start() for m in FEED_ITEM.finditer(feed_string) if m[0][1] != "!"), 0)
 
     # RSS first when the root says so: the HTML of its items can contain <link .../> tags
     if "<link>" in feed_string and has_rss_root(feed_string):

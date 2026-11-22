@@ -601,6 +601,11 @@ def test_find_feed_urls_relative_links(url, head, feed_url, expected):
             f"{XMLDECL}<link>https://example.org/blog/</link><link>https://example.org/blog/post-1</link>",
             ["https://example.org/blog/", "https://example.org/blog/post-1"],
         ),
+        # an item in a comment is not an item
+        (
+            '<rss version="2.0"><channel><link>https://example.org/blog/</link><!-- <item> --></channel></rss>',
+            ["https://example.org/blog/"],
+        ),
     ],
 )
 def test_feed_links_from_items_only(feed, expected):
